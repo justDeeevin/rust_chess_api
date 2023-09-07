@@ -19,7 +19,9 @@ impl From<Error> for actix_web::Error {
                 MoveError::FriendlyFire => {
                     actix_web::error::ErrorBadRequest("Friendly fire is not allowed")
                 }
-                MoveError::InvalidPath => actix_web::error::ErrorBadRequest("Invalid path"),
+                MoveError::InvalidPath(r) => {
+                    actix_web::error::ErrorBadRequest(format!("Invalid path. Reason: {}", r))
+                }
                 MoveError::PathIsBlocked => actix_web::error::ErrorBadRequest("Path is blocked"),
                 MoveError::NoMotion => actix_web::error::ErrorBadRequest("No motion"),
             },
@@ -27,12 +29,16 @@ impl From<Error> for actix_web::Error {
     }
 }
 
+#[cfg(test)]
+#[derive(Debug, PartialEq, Eq)]
+pub struct SquareOccupied;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum MoveError {
     EmptyStartingSquare,
     NotYourTurn,
     FriendlyFire,
-    InvalidPath,
+    InvalidPath(&'static str),
     PathIsBlocked,
     NoMotion,
 }
@@ -162,7 +168,7 @@ impl Board {
         board
     }
 
-    pub fn move_piece(&mut self, from: Position, to: Position) -> Result<(), Error> {
+    pub fn move_troop(&mut self, from: Position, to: Position) -> Result<(), Error> {
         let from_square = self
             .squares
             .get(&from.file)
@@ -194,10 +200,33 @@ impl Board {
                     .unwrap()
                     .get(&position.rank)
                     .unwrap();
-                if square.troop.is_some() {
+                if square.troop.is_some()
+                    && square.troop.as_ref().unwrap().color == from_troop.color
+                {
                     return Err(Error::Move(MoveError::PathIsBlocked));
                 }
             }
+        }
+
+        self.squares
+            .get_mut(&to.file)
+            .unwrap()
+            .get_mut(&to.rank)
+            .unwrap()
+            .troop = Some(from_troop.clone());
+        self.squares
+            .get_mut(&from.file)
+            .unwrap()
+            .get_mut(&from.rank)
+            .unwrap()
+            .troop = None;
+
+        // TODO: Better state management (turn should only toggle if nothing else is triggered by
+        // move. i.e., check, checkmate)
+        match self.state {
+            BoardState::ToMove(Color::White) => self.state = BoardState::ToMove(Color::Black),
+            BoardState::ToMove(Color::Black) => self.state = BoardState::ToMove(Color::White),
+            _ => todo!(),
         }
 
         Ok(())
@@ -217,37 +246,138 @@ impl Board {
         let rank_diff = (from.rank as i8 - to.rank as i8).abs();
         match troop.piece {
             Piece::Pawn => {
-                if file_diff == 0 {
-                    return Err(Error::Move(MoveError::InvalidPath));
-                }
-                if file_diff == 2 {
+                if rank_diff == 2 {
                     match troop.color {
                         Color::White => {
-                            if from.rank != Rank::Seven {
-                                return Err(Error::Move(MoveError::InvalidPath));
+                            if from.rank != Rank::Two {
+                                return Err(Error::Move(MoveError::InvalidPath(
+                                    "Pawn must be on its starting square to move two spaces",
+                                )));
                             }
                         }
                         Color::Black => {
-                            if from.rank != Rank::Two {
-                                return Err(Error::Move(MoveError::InvalidPath));
+                            if from.rank != Rank::Seven {
+                                return Err(Error::Move(MoveError::InvalidPath(
+                                    "Pawn must be on its starting square to move two spaces",
+                                )));
                             }
                         }
                     }
                 }
-                if file_diff > 2 {
-                    return Err(Error::Move(MoveError::InvalidPath));
+                if rank_diff > 2 {
+                    return Err(Error::Move(MoveError::InvalidPath(
+                        "Pawn cannot move more than two spaces vertically",
+                    )));
                 }
-                if rank_diff > 1 {
-                    return Err(Error::Move(MoveError::InvalidPath));
+                if file_diff > 1 {
+                    return Err(Error::Move(MoveError::InvalidPath(
+                        "Pawn cannot move more than one space horizontally",
+                    )));
                 }
-                if rank_diff == 1 && !capturing {
-                    return Err(Error::Move(MoveError::InvalidPath));
+                if file_diff == 1 && !capturing {
+                    return Err(Error::Move(MoveError::InvalidPath(
+                        "Pawn cannot move diagonally without capturing",
+                    )));
                 }
             }
-            _ => todo!(),
+            Piece::Rook => {
+                if file_diff > 0 && rank_diff > 0 {
+                    return Err(Error::Move(MoveError::InvalidPath(
+                        "Rook must move in a purely vertical or horizontal line",
+                    )));
+                }
+            }
+            Piece::Knight => {
+                if file_diff == 0 || rank_diff == 0 {
+                    return Err(Error::Move(MoveError::InvalidPath(
+                        "Knight must move either two spaces horizontally and one space vertically, or two spaces vertically and one space horizontally",
+                    )));
+                }
+                if file_diff + rank_diff != 3 {
+                    return Err(Error::Move(MoveError::InvalidPath(
+                        "Knight must move either two spaces horizontally and one space vertically, or two spaces vertically and one space horizontally",
+                    )));
+                }
+            }
+            Piece::Bishop => {
+                if file_diff != rank_diff {
+                    return Err(Error::Move(MoveError::InvalidPath(
+                        "Bishop must move in a purely diagonal line",
+                    )));
+                }
+            }
+            Piece::King => {
+                if file_diff > 1 || rank_diff > 1 {
+                    return Err(Error::Move(MoveError::InvalidPath(
+                        "King cannot move more than one space in any direction",
+                    )));
+                }
+            }
+            Piece::Queen => {
+                if file_diff > 0 && rank_diff > 0 && file_diff != rank_diff {
+                    return Err(Error::Move(MoveError::InvalidPath(
+                        "Queen must move in a purely vertical, horizontal, or diagonal line",
+                    )));
+                }
+            }
         }
 
         Ok(path)
+    }
+
+    pub fn reset(&mut self) {
+        *self = Self::default();
+    }
+
+    #[cfg(test)]
+    pub fn remove_troop(&mut self, position: Position) -> Option<Troop> {
+        let square = self
+            .squares
+            .get_mut(&position.file)
+            .unwrap()
+            .get_mut(&position.rank)
+            .unwrap();
+        square.troop.take()
+    }
+
+    #[cfg(test)]
+    pub fn place_troop(&mut self, troop: Troop) -> Result<(), SquareOccupied> {
+        if self
+            .squares
+            .get(&troop.position.file)
+            .unwrap()
+            .get(&troop.position.rank)
+            .unwrap()
+            .troop
+            .is_some()
+        {
+            return Err(SquareOccupied);
+        }
+        self.squares
+            .get_mut(&troop.position.file)
+            .unwrap()
+            .get_mut(&troop.position.rank)
+            .unwrap()
+            .troop = Some(troop.clone());
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub fn replace_troop(&mut self, position: Position, troop: Troop) -> Option<Troop> {
+        let square = self
+            .squares
+            .get_mut(&position.file)
+            .unwrap()
+            .get_mut(&position.rank)
+            .unwrap();
+        let old_troop = square.troop.clone();
+        square.troop = Some(troop);
+        old_troop
+    }
+
+    #[cfg(test)]
+    pub fn set_state(&mut self, state: BoardState) {
+        self.state = state;
     }
 }
 
@@ -309,8 +439,8 @@ impl TryFrom<u8> for File {
 
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub struct Position {
-    pub rank: Rank,
     pub file: File,
+    pub rank: Rank,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -329,7 +459,7 @@ pub enum Piece {
     King,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct Troop {
     pub piece: Piece,
     pub color: Color,

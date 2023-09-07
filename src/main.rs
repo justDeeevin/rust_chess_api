@@ -1,3 +1,4 @@
+#![feature(const_mut_refs)]
 pub mod chess;
 #[cfg(test)]
 mod tests;
@@ -21,7 +22,7 @@ async fn new_board() -> impl Responder {
 #[post("/move")]
 async fn move_piece(body: String) -> actix_web::Result<impl Responder> {
     let mut move_json: MoveJson = serde_json::from_str(body.as_str())?;
-    move_json.board.move_piece(move_json.start, move_json.end)?;
+    move_json.board.move_troop(move_json.start, move_json.end)?;
 
     Ok(HttpResponse::Ok().body(to_string(&move_json.board).unwrap()))
 }

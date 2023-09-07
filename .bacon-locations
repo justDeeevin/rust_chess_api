@@ -1,1 +1,1 @@
-warning /home/devin/Software Dev/rust_chess_backend/src/chess.rs:215:13 variable does not need to be mutable
+warning /home/devin/Software Dev/rust_chess_backend/src/chess.rs:244:13 variable does not need to be mutable
