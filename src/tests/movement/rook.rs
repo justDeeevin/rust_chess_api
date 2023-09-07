@@ -41,3 +41,43 @@ fn diagonal_movement() {
         ))),
     );
 }
+
+#[test]
+fn blocked_vertical() {
+    let mut board = Board::default();
+    assert_eq!(
+        board.move_troop(
+            Position {
+                file: File::A,
+                rank: Rank::One
+            },
+            Position {
+                file: File::A,
+                rank: Rank::Three
+            }
+        ),
+        Err(Error::Move(MoveError::PathIsBlocked))
+    );
+}
+
+#[test]
+fn blocked_horizonal() {
+    let mut board = Board::default();
+    board.remove_troop(Position {
+        file: File::C,
+        rank: Rank::One,
+    });
+    assert_eq!(
+        board.move_troop(
+            Position {
+                file: File::A,
+                rank: Rank::One
+            },
+            Position {
+                file: File::C,
+                rank: Rank::One
+            }
+        ),
+        Err(Error::Move(MoveError::PathIsBlocked))
+    );
+}

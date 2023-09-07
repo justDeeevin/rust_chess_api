@@ -142,3 +142,32 @@ fn three_squares_vertically() {
         )))
     );
 }
+
+#[test]
+fn blocked_path() {
+    let mut board = Board::default();
+    board
+        .place_troop(Troop {
+            piece: Piece::Pawn,
+            color: Color::White,
+            position: Position {
+                file: File::A,
+                rank: Rank::Three,
+            },
+        })
+        .unwrap();
+
+    assert_eq!(
+        board.move_troop(
+            Position {
+                file: File::A,
+                rank: Rank::Two
+            },
+            Position {
+                file: File::A,
+                rank: Rank::Four
+            }
+        ),
+        Err(Error::Move(MoveError::PathIsBlocked))
+    );
+}

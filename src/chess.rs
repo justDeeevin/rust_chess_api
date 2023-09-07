@@ -132,8 +132,8 @@ impl Default for Board {
     }
 }
 
-impl Board {
-    pub fn fmt(&self) -> String {
+impl std::fmt::Display for Board {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut board = String::new();
         for rank in 1..=8 {
             for file in 1..=8 {
@@ -165,9 +165,11 @@ impl Board {
             }
             board.push('\n');
         }
-        board
+        write!(f, "{}", board)
     }
+}
 
+impl Board {
     pub fn move_troop(&mut self, from: Position, to: Position) -> Result<(), Error> {
         let from_square = self
             .squares
@@ -193,16 +195,14 @@ impl Board {
 
         let path = Self::make_path(from_troop, from, to, capturing)?;
         if from_troop.piece != Piece::Knight {
-            for position in path {
+            for (index, position) in path.iter().enumerate() {
                 let square = self
                     .squares
                     .get(&position.file)
                     .unwrap()
                     .get(&position.rank)
                     .unwrap();
-                if square.troop.is_some()
-                    && square.troop.as_ref().unwrap().color == from_troop.color
-                {
+                if index != path.len() - 1 && square.troop.is_some() {
                     return Err(Error::Move(MoveError::PathIsBlocked));
                 }
             }
@@ -241,7 +241,7 @@ impl Board {
         if from == to {
             return Err(Error::Move(MoveError::NoMotion));
         }
-        let mut path = Vec::new();
+        let mut path = vec![];
         let file_diff = (from.file as i8 - to.file as i8).abs();
         let rank_diff = (from.rank as i8 - to.rank as i8).abs();
         match troop.piece {
@@ -279,12 +279,39 @@ impl Board {
                         "Pawn cannot move diagonally without capturing",
                     )));
                 }
+                if rank_diff > 1 {
+                    for rank in (from.rank as u8)..(to.rank as u8) {
+                        path.push(Position {
+                            file: from.file,
+                            rank: Rank::try_from(rank + 2).unwrap(),
+                        });
+                    }
+                }
+                path.push(to);
             }
             Piece::Rook => {
                 if file_diff > 0 && rank_diff > 0 {
                     return Err(Error::Move(MoveError::InvalidPath(
                         "Rook must move in a purely vertical or horizontal line",
                     )));
+                }
+                if file_diff > 0 {
+                    for file in (from.file as u8)..(to.file as u8) {
+                        path.push(Position {
+                            // + 2 because File::A as u8 == 0 and we don't want to include the
+                            // starting square in the path
+                            file: File::try_from(file + 2).unwrap(),
+                            rank: from.rank,
+                        });
+                    }
+                }
+                if rank_diff > 0 {
+                    for rank in (from.rank as u8)..(to.rank as u8) {
+                        path.push(Position {
+                            file: from.file,
+                            rank: Rank::try_from(rank + 2).unwrap(),
+                        });
+                    }
                 }
             }
             Piece::Knight => {
@@ -298,12 +325,40 @@ impl Board {
                         "Knight must move either two spaces horizontally and one space vertically, or two spaces vertically and one space horizontally",
                     )));
                 }
+                match rank_diff {
+                    1 => {
+                        for file in (from.file as u8)..=(to.file as u8) {
+                            path.push(Position {
+                                rank: to.rank,
+                                file: File::try_from(file + 1).unwrap(),
+                            });
+                        }
+                    }
+                    2 => {
+                        for rank in (from.rank as u8)..(to.rank as u8) {
+                            path.push(Position {
+                                rank: Rank::try_from(rank + 2).unwrap(),
+                                file: from.file,
+                            });
+                        }
+                        path.push(to);
+                    }
+                    _ => unreachable!(),
+                }
             }
             Piece::Bishop => {
                 if file_diff != rank_diff {
                     return Err(Error::Move(MoveError::InvalidPath(
                         "Bishop must move in a purely diagonal line",
                     )));
+                }
+                let mut file = from.file as u8;
+                for rank in (from.rank as u8)..(to.rank as u8) {
+                    path.push(Position {
+                        file: File::try_from(file + 2).unwrap(),
+                        rank: Rank::try_from(rank + 2).unwrap(),
+                    });
+                    file += 1;
                 }
             }
             Piece::King => {
@@ -312,12 +367,37 @@ impl Board {
                         "King cannot move more than one space in any direction",
                     )));
                 }
+                path.push(to);
             }
             Piece::Queen => {
                 if file_diff > 0 && rank_diff > 0 && file_diff != rank_diff {
                     return Err(Error::Move(MoveError::InvalidPath(
                         "Queen must move in a purely vertical, horizontal, or diagonal line",
                     )));
+                }
+                if file_diff == rank_diff {
+                    let mut file = from.file as u8;
+                    for rank in (from.rank as u8)..(to.rank as u8) {
+                        path.push(Position {
+                            file: File::try_from(file + 2).unwrap(),
+                            rank: Rank::try_from(rank + 2).unwrap(),
+                        });
+                        file += 1;
+                    }
+                } else if file_diff > 0 {
+                    for file in (from.file as u8)..(to.file as u8) {
+                        path.push(Position {
+                            file: File::try_from(file + 2).unwrap(),
+                            rank: from.rank,
+                        });
+                    }
+                } else if rank_diff > 0 {
+                    for rank in (from.rank as u8)..(to.rank as u8) {
+                        path.push(Position {
+                            file: from.file,
+                            rank: Rank::try_from(rank + 2).unwrap(),
+                        });
+                    }
                 }
             }
         }

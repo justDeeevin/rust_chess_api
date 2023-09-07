@@ -1,9 +1,27 @@
 default_job = "clippy"
 
 [jobs.clippy]
-command = ["cargo", "clippy", "--all-targets", "--all-features", "--color", "always"]
+command = [
+    "cargo",
+    "clippy",
+    "--all-targets",
+    "--all-features",
+    "--color",
+    "always",
+]
 need_stdout = true
 
 [jobs.test]
-command = ["cargo", "test", "--all-targets", "--all-features", "--color", "always"]
+command = [
+    "cargo",
+    "test",
+    "--all-targets",
+    "--all-features",
+    "--color",
+    "always",
+]
+need_stdout = true
+
+[jobs.run]
+command = ["cargo", "run", "--color", "always"]
 need_stdout = true

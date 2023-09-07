@@ -41,3 +41,21 @@ fn invalid_movement() {
         )))
     );
 }
+
+#[test]
+fn blocked_path() {
+    let mut board = Board::default();
+    assert_eq!(
+        board.move_troop(
+            Position {
+                file: File::C,
+                rank: Rank::One
+            },
+            Position {
+                file: File::E,
+                rank: Rank::Three
+            }
+        ),
+        Err(Error::Move(MoveError::PathIsBlocked))
+    );
+}
