@@ -30,7 +30,7 @@ async fn move_piece(body: String) -> actix_web::Result<impl Responder> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(move || App::new().service(new_board))
-        .bind(("127.0.0.1", 8080))?
+        .bind(("127.0.0.1", 3000))?
         .run()
         .await
 }
