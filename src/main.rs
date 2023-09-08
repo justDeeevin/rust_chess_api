@@ -1,9 +1,7 @@
-#![feature(const_mut_refs)]
-pub mod chess;
 #[cfg(test)]
 mod tests;
 use actix_web::{get, post, App, HttpResponse, HttpServer, Responder};
-use chess::Board;
+use rust_chess::Board;
 use serde_json::to_string;
 
 #[derive(serde::Deserialize)]
