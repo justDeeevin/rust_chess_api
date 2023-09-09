@@ -1,13 +1,11 @@
-#[cfg(test)]
-mod tests;
 use actix_web::{get, post, App, HttpResponse, HttpServer, Responder};
 use rust_chess::Board;
 use serde_json::to_string;
 
 #[derive(serde::Deserialize)]
 struct MoveJson {
-    start: chess::Position,
-    end: chess::Position,
+    start: rust_chess::Position,
+    end: rust_chess::Position,
     board: Board,
 }
 
@@ -27,8 +25,10 @@ async fn move_piece(body: String) -> actix_web::Result<impl Responder> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let port = 3000;
+    println!("Hosting API on port {}", port);
     HttpServer::new(move || App::new().service(new_board))
-        .bind(("127.0.0.1", 3000))?
+        .bind(("127.0.0.1", port))?
         .run()
         .await
 }
