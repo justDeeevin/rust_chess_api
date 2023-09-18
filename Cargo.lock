@@ -20,6 +20,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-cors"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b340e9cfa5b08690aae90fb61beb44e9b06f44fe3d0f93781aaa58cfba86245e"
+dependencies = [
+ "actix-utils",
+ "actix-web",
+ "derive_more",
+ "futures-util",
+ "log",
+ "once_cell",
+ "smallvec",
+]
+
+[[package]]
 name = "actix-http"
 version = "3.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -843,9 +858,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5ea92a5b6195c6ef2a0295ea818b312502c6fc94dde986c5553242e18fd4ce2"
 
 [[package]]
-name = "rust_chess"
+name = "rust-chess"
 version = "0.1.0"
-source = "git+https://github.com/ThePyroTF2/rust_chess.git?branch=master#f3f86c4bfd18bf69050e07ba8a5b578ad62ac32c"
+source = "git+https://github.com/ThePyroTF2/rust-chess.git?branch=master#67898840c41031a857bc6284d6e1cc690e16f76c"
 dependencies = [
  "actix-web",
  "serde",
@@ -857,8 +872,9 @@ dependencies = [
 name = "rust_chess_api"
 version = "0.1.0"
 dependencies = [
+ "actix-cors",
  "actix-web",
- "rust_chess",
+ "rust-chess",
  "serde",
  "serde_json",
  "tokio",

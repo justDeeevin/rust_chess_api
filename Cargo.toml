@@ -14,3 +14,4 @@ rust-chess = { git = "https://github.com/ThePyroTF2/rust-chess.git", branch = "m
     "actix",
     "actions",
 ] }
+actix-cors = "0.6.4"
