@@ -17,7 +17,7 @@ async fn new_board() -> impl Responder {
 }
 
 #[post("/move")]
-async fn move_piece(body: String) -> actix_web::Result<impl Responder> {
+async fn move_troop(body: String) -> actix_web::Result<impl Responder> {
     let mut move_json: MoveJson = serde_json::from_str(body.as_str())?;
     move_json.board.move_troop(move_json.start, move_json.end)?;
 
@@ -43,7 +43,7 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .service(new_board)
-            .service(move_piece)
+            .service(move_troop)
             .service(display)
             .wrap(cors)
     })
