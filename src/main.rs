@@ -16,7 +16,7 @@ async fn new_board() -> impl Responder {
     HttpResponse::Ok().body(to_string(&board).unwrap())
 }
 
-#[post("/move")]
+#[post("/move-troop")]
 async fn move_troop(body: String) -> actix_web::Result<impl Responder> {
     let mut move_json: MoveJson = serde_json::from_str(body.as_str())?;
     move_json.board.move_troop(move_json.start, move_json.end)?;
@@ -36,10 +36,11 @@ async fn main() -> std::io::Result<()> {
     println!("Hosting API on port {}", port);
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allow_any_origin()
-            .allow_any_method()
-            .allow_any_header()
+            .allowed_origin("https://devinchess.vercel.app")
             .max_age(3600);
+
+        #[cfg(debug_assertions)]
+        let cors = cors.allowed_origin("http://localhost:5173");
 
         App::new()
             .service(new_board)
