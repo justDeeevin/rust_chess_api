@@ -1,5 +1,5 @@
 use actix_cors::Cors;
-use actix_web::{get, options, post, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, post, App, HttpResponse, HttpServer, Responder};
 use rust_chess::Board;
 use serde_json::to_string;
 
@@ -30,11 +30,6 @@ async fn display(body: String) -> actix_web::Result<impl Responder> {
     Ok(HttpResponse::Ok().body(format!("{}", board)))
 }
 
-#[options("/move-troop")]
-async fn move_troop_options() -> impl Responder {
-    HttpResponse::Ok()
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let port: u16 = std::env::var("PORT").unwrap().parse().unwrap();
@@ -51,7 +46,6 @@ async fn main() -> std::io::Result<()> {
             .service(new_board)
             .service(move_troop)
             .service(display)
-            .service(move_troop_options)
             .wrap(cors)
     })
     .bind(("0.0.0.0", port))?
