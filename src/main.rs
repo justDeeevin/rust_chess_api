@@ -1,5 +1,5 @@
 use actix_cors::Cors;
-use actix_web::{get, post, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, options, post, App, HttpResponse, HttpServer, Responder};
 use rust_chess::Board;
 use serde_json::to_string;
 
@@ -30,12 +30,19 @@ async fn display(body: String) -> actix_web::Result<impl Responder> {
     Ok(HttpResponse::Ok().body(format!("{}", board)))
 }
 
+#[options("/move-troop")]
+async fn move_troop_options() -> impl Responder {
+    HttpResponse::Ok()
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let port: u16 = std::env::var("PORT").unwrap().parse().unwrap();
     println!("Hosting API on port {}", port);
     HttpServer::new(move || {
-        let cors = Cors::default().allow_any_origin().max_age(3600);
+        let cors = Cors::default()
+            .allowed_origin("devinchess*.vercel.app")
+            .max_age(3600);
 
         App::new()
             .service(new_board)
