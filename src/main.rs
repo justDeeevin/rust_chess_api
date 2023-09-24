@@ -35,12 +35,7 @@ async fn main() -> std::io::Result<()> {
     let port: u16 = std::env::var("PORT").unwrap().parse().unwrap();
     println!("Hosting API on port {}", port);
     HttpServer::new(move || {
-        let cors = Cors::default()
-            .allowed_origin("https://devinchess.vercel.app")
-            .max_age(3600);
-
-        #[cfg(debug_assertions)]
-        let cors = cors.allowed_origin("http://localhost:5173");
+        let cors = Cors::default().allow_any_origin().max_age(3600);
 
         App::new()
             .service(new_board)
