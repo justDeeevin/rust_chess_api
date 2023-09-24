@@ -41,13 +41,14 @@ async fn main() -> std::io::Result<()> {
     println!("Hosting API on port {}", port);
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allowed_origin("devinchess*.vercel.app")
+            .allowed_origin("https://devinchess*.vercel.app")
             .max_age(3600);
 
         App::new()
             .service(new_board)
             .service(move_troop)
             .service(display)
+            .service(move_troop_options)
             .wrap(cors)
     })
     .bind(("0.0.0.0", port))?
