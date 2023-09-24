@@ -41,7 +41,10 @@ async fn main() -> std::io::Result<()> {
     println!("Hosting API on port {}", port);
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allowed_origin("https://devinchess*.vercel.app")
+            .allowed_origin_fn(|origin, _req_head| {
+                origin.as_bytes().starts_with(b"https://devinchess")
+                    && origin.as_bytes().ends_with(b"vercel.app")
+            })
             .max_age(3600);
 
         App::new()
