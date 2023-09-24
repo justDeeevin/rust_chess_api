@@ -32,7 +32,7 @@ async fn display(body: String) -> actix_web::Result<impl Responder> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let port = 3000;
+    let port: u16 = std::env::var("PORT").unwrap().parse().unwrap();
     println!("Hosting API on port {}", port);
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -48,7 +48,7 @@ async fn main() -> std::io::Result<()> {
             .service(display)
             .wrap(cors)
     })
-    .bind(("127.0.0.1", port))?
+    .bind(("0.0.0.0", port))?
     .run()
     .await
 }
