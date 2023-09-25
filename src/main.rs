@@ -42,6 +42,9 @@ async fn main() -> std::io::Result<()> {
             })
             .max_age(3600);
 
+        #[cfg(debug_assertions)]
+        let cors = cors.allowed_origin("http://localhost:5173");
+
         App::new()
             .service(new_board)
             .service(move_troop)
