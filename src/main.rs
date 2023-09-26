@@ -10,6 +10,12 @@ struct MoveJson {
     board: Board,
 }
 
+#[derive(serde::Deserialize)]
+struct ValidMovesJson {
+    troop: rust_chess::Troop,
+    board: Board,
+}
+
 #[get("/new-board")]
 async fn new_board() -> impl Responder {
     let board = Board::default();
@@ -22,6 +28,14 @@ async fn move_troop(body: String) -> actix_web::Result<impl Responder> {
     move_json.board.move_troop(move_json.start, move_json.end)?;
 
     Ok(HttpResponse::Ok().body(to_string(&move_json.board).unwrap()))
+}
+
+#[post("/valid-moves")]
+async fn valid_moves(body: String) -> actix_web::Result<impl Responder> {
+    let valid_moves_json: ValidMovesJson = serde_json::from_str(body.as_str())?;
+    let valid_moves = valid_moves_json.board.valid_moves(&valid_moves_json.troop);
+
+    Ok(HttpResponse::Ok().body(to_string(&valid_moves).unwrap()))
 }
 
 #[post("/display")]
@@ -49,6 +63,7 @@ async fn main() -> std::io::Result<()> {
             .service(new_board)
             .service(move_troop)
             .service(display)
+            .service(valid_moves)
             .wrap(cors)
     })
     .bind(("0.0.0.0", port))?
