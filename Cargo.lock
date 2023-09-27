@@ -841,8 +841,8 @@ checksum = "dbb5fb1acd8a1a18b3dd5be62d25485eb770e05afb408a9627d14d451bae12da"
 
 [[package]]
 name = "rust-chess"
-version = "0.3.0"
-source = "git+https://github.com/ThePyroTF2/rust-chess.git?branch=master#cb77af21225ada1d0b9a1dcd8977e445887b33c4"
+version = "0.3.1"
+source = "git+https://github.com/ThePyroTF2/rust-chess.git?branch=master#cc7b0d1a9e974e2ebaaf97328e9d2c2c7b7eae06"
 dependencies = [
  "actix-web",
  "either",
